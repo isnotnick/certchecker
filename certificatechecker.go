@@ -1,12 +1,3 @@
-//
-// My First SSL Checker in Go
-// Nick France - nick@nickf.net
-// 
-// Reads in a text file containing a list of IPs and/or domains and attempts an SSL/TLS connection to each.
-// Port is assumed as 443 unless added to the list in format - 'domain-or-IP:port'
-// 
-
-
 
 package certificatechecker
 
