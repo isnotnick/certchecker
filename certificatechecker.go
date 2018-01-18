@@ -9,6 +9,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"regexp"
 	"net"
@@ -22,11 +23,32 @@ import (
 var reg *regexp.Regexp
 var serverReg *regexp.Regexp
 
+var mozStore *x509.CertPool
+var msStore *x509.CertPool
+var appleStore *x509.CertPool
+
+var mozFile string = "Mozilla-16-Jan-18.pem"
+var msFile string = "MS-16-Jan-18.pem"
+var appleFile string = "Apple-16-Jan-18.pem"
+
 
 func init() {
-	// Compile regular expressions for IP-address check and HTTP-Header server-token parsing
+	//	Compile regular expressions for IP-address check and HTTP-Header server-token parsing
 	reg = regexp.MustCompile("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+")
 	serverReg = regexp.MustCompile("(?:Server: )(.*)\\r\\n")
+
+	//	Load the root stores from the PEM files
+	mozCerts, _ := ioutil.ReadFile(mozFile)
+	mozStore = x509.NewCertPool()
+	mozStore.AppendCertsFromPEM(mozCerts)
+	
+	appleCerts, _ := ioutil.ReadFile(appleFile)
+	appleStore = x509.NewCertPool()
+	appleStore.AppendCertsFromPEM(appleCerts)
+	
+	msCerts, _ := ioutil.ReadFile(msFile)
+	msStore = x509.NewCertPool()
+	msStore.AppendCertsFromPEM(msCerts)
 }
 
 
@@ -49,7 +71,7 @@ type CertResult struct {
 	NotAfter int
 	KeySize int
 	KeyType string
-	HashType string
+	SigAlg string
 	OCSPStaple string
 
 	CertIssuerCN string
@@ -87,7 +109,17 @@ type CertResult struct {
 
 	ScanTimings string
 
+	MozTrust string
+	MSTrust string
+	AppleTrust string
+
 	ErrorMessage string
+}
+
+func StoreSummaries() {
+	fmt.Printf("Apple Root Store loaded from [%v] - number of certs : %v\n", appleFile, len(appleStore.Subjects()))
+	fmt.Printf("Microsoft Root Store loaded from [%v] - number of certs : %v\n", msFile, len(msStore.Subjects()))
+	fmt.Printf("Moz Root Store loaded from [%v] - number of certs : %v\n", mozFile, len(mozStore.Subjects()))
 }
 
 
@@ -132,7 +164,8 @@ func CheckCertificate(address string) CertResult {
 	evIssuers["2.16.840.1.113733.1.7.23.6"] = "VeriSign / Symantec"
 	evIssuers["2.16.840.1.114171.500.9"] = "Wells Fargo WellsSecure Public Root CA"
 
-
+	// CertPool for the server-provided chain
+	providedIntermediates := x509.NewCertPool()
 
 	//	Some variables and input-cleaning to begin with, and of course the start time marker
 	startTime := int(time.Now().Unix())
@@ -254,6 +287,8 @@ func CheckCertificate(address string) CertResult {
 		thisCertificate.OCSPStaple = base64.StdEncoding.EncodeToString(conn.OCSPResponse())
 	}
 	defer conn.Close()
+
+	var trustTestCert *x509.Certificate
 	
 	//	Loop each certificate in the PeerCertificates (from the server) and analyse each - grab subject info, SANs, key & KeySize, PEM version
 	checkedCert := make(map[string]bool)
@@ -324,39 +359,82 @@ func CheckCertificate(address string) CertResult {
 
 			switch cert.SignatureAlgorithm {
 				case 0:
-					thisCertificate.HashType = "UnknownSignatureAlgorithm"
+					thisCertificate.SigAlg = "UnknownSignatureAlgorithm"
 				case 1:
-					thisCertificate.HashType = "MD2WithRSA"
+					thisCertificate.SigAlg = "MD2WithRSA"
 				case 2:
-					thisCertificate.HashType = "MD5WithRSA"
+					thisCertificate.SigAlg = "MD5WithRSA"
 				case 3:
-					thisCertificate.HashType = "SHA1WithRSA"
+					thisCertificate.SigAlg = "SHA1WithRSA"
 				case 4:
-					thisCertificate.HashType = "SHA256WithRSA"
+					thisCertificate.SigAlg = "SHA256WithRSA"
 				case 5:
-					thisCertificate.HashType = "SHA384WithRSA"
+					thisCertificate.SigAlg = "SHA384WithRSA"
 				case 6:
-					thisCertificate.HashType = "SHA512WithRSA"
+					thisCertificate.SigAlg = "SHA512WithRSA"
 				case 7:
-					thisCertificate.HashType = "DSAWithSHA1"
+					thisCertificate.SigAlg = "DSAWithSHA1"
 				case 8:
-					thisCertificate.HashType = "DSAWithSHA256"
+					thisCertificate.SigAlg = "DSAWithSHA256"
 				case 9:
-					thisCertificate.HashType = "ECDSAWithSHA1"
+					thisCertificate.SigAlg = "ECDSAWithSHA1"
 				case 10:
-					thisCertificate.HashType = "ECDSAWithSHA256"
+					thisCertificate.SigAlg = "ECDSAWithSHA256"
 				case 11:
-					thisCertificate.HashType = "ECDSAWithSHA384"
+					thisCertificate.SigAlg = "ECDSAWithSHA384"
 				case 12:
-					thisCertificate.HashType = "ECDSAWithSHA512"
+					thisCertificate.SigAlg = "ECDSAWithSHA512"
 			}
 			
 			thisCertificate.PEMCertificate = string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
+			trustTestCert = cert
 		} else {
 			certChain += string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
+			providedIntermediates.AppendCertsFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 		}
 		
 		i++
+	}
+
+	//	Trust store checking
+	if mozStore != nil {
+		opts := x509.VerifyOptions{
+			DNSName: thisCertificate.HostName,
+			Roots: mozStore,
+			Intermediates: providedIntermediates,
+		}
+
+		if _, err := trustTestCert.Verify(opts); err != nil {
+			thisCertificate.MozTrust = err.Error()
+		} else {
+			thisCertificate.MozTrust = "Y"
+		}
+	}
+	if msStore != nil {
+		opts := x509.VerifyOptions{
+			DNSName: thisCertificate.HostName,
+			Roots: msStore,
+			Intermediates: providedIntermediates,
+		}
+
+		if _, err := trustTestCert.Verify(opts); err != nil {
+			thisCertificate.MSTrust = err.Error()
+		} else {
+			thisCertificate.MSTrust = "Y"
+		}
+	}
+	if appleStore != nil {
+		opts := x509.VerifyOptions{
+			DNSName: thisCertificate.HostName,
+			Roots: appleStore,
+			Intermediates: providedIntermediates,
+		}
+
+		if _, err := trustTestCert.Verify(opts); err != nil {
+			thisCertificate.AppleTrust = err.Error()
+		} else {
+			thisCertificate.AppleTrust = "Y"
+		}
 	}
 	
 	//	Add the chain of all certs provided by the server
@@ -394,6 +472,7 @@ func CheckCertificate(address string) CertResult {
 		thisCertificate.Validity = "Valid"
 	}
 
+
 	scanTime := time.Now()
 	accurateScanDuration := int(scanTime.Sub(accurateStartTime) / time.Millisecond)
 	thisCertificate.ScanDuration = accurateScanDuration
@@ -403,7 +482,7 @@ func CheckCertificate(address string) CertResult {
 	timeForTLSHandshake := int(tlsHandshakeTime.Sub(ipConnTime) / time.Millisecond)
 	timeForHTTPHeader := int(httpHeaderTime.Sub(tlsHandshakeTime) / time.Millisecond)
 
-	scanTimings := fmt.Sprintf("Timings - DNS Lookup: %d, IP Connection: %d, TLS Handshake: %d, HTTP Header: %d, Scan processing: %d \n", timeForDNSLookup, timeForIPConnection, timeForTLSHandshake, timeForHTTPHeader, accurateScanDuration)
+	scanTimings := fmt.Sprintf("Timings - DNS Lookup: %dms, IP Connection: %dms, TLS Handshake: %dms, HTTP Header: %dms, Scan processing: %dms \n", timeForDNSLookup, timeForIPConnection, timeForTLSHandshake, timeForHTTPHeader, accurateScanDuration)
 	thisCertificate.ScanTimings = scanTimings
 	
 	return thisCertificate
