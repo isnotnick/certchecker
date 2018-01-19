@@ -405,7 +405,7 @@ func CheckCertificate(address string) CertResult {
 		}
 
 		if _, err := trustTestCert.Verify(opts); err != nil {
-			thisCertificate.MozTrust = err.Error()
+			thisCertificate.MozTrust = "N"
 		} else {
 			thisCertificate.MozTrust = "Y"
 		}
@@ -418,7 +418,7 @@ func CheckCertificate(address string) CertResult {
 		}
 
 		if _, err := trustTestCert.Verify(opts); err != nil {
-			thisCertificate.MSTrust = err.Error()
+			thisCertificate.MSTrust = "N"
 		} else {
 			thisCertificate.MSTrust = "Y"
 		}
@@ -431,7 +431,7 @@ func CheckCertificate(address string) CertResult {
 		}
 
 		if _, err := trustTestCert.Verify(opts); err != nil {
-			thisCertificate.AppleTrust = err.Error()
+			thisCertificate.AppleTrust = "N"
 		} else {
 			thisCertificate.AppleTrust = "Y"
 		}
