@@ -372,7 +372,7 @@ func CheckCertificate(address string) CertResult {
 	defer conn.Close()
 
 	var trustTestCert *x509.Certificate
-	var symantecFailure bool = false
+	var symantecFailure int = 0
 	
 	//	Loop each certificate in the PeerCertificates (from the server) and analyse each - grab subject info, SANs, key & KeySize, PEM version
 	checkedCert := make(map[string]bool)
@@ -479,19 +479,20 @@ func CheckCertificate(address string) CertResult {
 			//	Symantec distrust checking
 			sha256Hash := sha256.New()
 			sha256Hash.Write(cert.RawSubjectPublicKeyInfo)
-			if symantecBadKeys[hex.EncodeToString(sha256Hash.Sum(nil))] {
-				if !symantecExceptions[hex.EncodeToString(sha256Hash.Sum(nil))] {
-					if !symantecManagedExceptions[hex.EncodeToString(sha256Hash.Sum(nil))] {
-						symantecFailure = true
-					}
-				}
+			thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
+			
+			if symantecBadKeys[thisCertKeyHash] {
+				symantecFailure++
+			}
+			if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
+				symantecFailure--
 			}
 		}
 		i++
 	}
 
 	//	Symantec distrust checking
-	if symantecFailure {
+	if symantecFailure >= 1 {
 		if thisCertificate.NotBefore < 1464739200 || thisCertificate.NotBefore >= 1512086400 {
 			thisCertificate.SymantecError = "Y"
 		} else {
