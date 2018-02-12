@@ -475,31 +475,8 @@ func CheckCertificate(address string) CertResult {
 		} else {
 			certChain += string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 			providedIntermediates.AppendCertsFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
-
-			//	Symantec distrust checking
-			sha256Hash := sha256.New()
-			sha256Hash.Write(cert.RawSubjectPublicKeyInfo)
-			thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-			
-			if symantecBadKeys[thisCertKeyHash] {
-				symantecFailure++
-			}
-			if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
-				symantecFailure--
-			}
 		}
 		i++
-	}
-
-	//	Symantec distrust checking
-	if symantecFailure >= 1 {
-		if thisCertificate.NotBefore < 1464739200 || thisCertificate.NotBefore >= 1512086400 {
-			thisCertificate.SymantecError = "Y"
-		} else {
-			thisCertificate.SymantecError = "N"
-		}
-	} else {
-		thisCertificate.SymantecError = "N"
 	}
 
 	//	Trust store checking
@@ -510,10 +487,26 @@ func CheckCertificate(address string) CertResult {
 			Intermediates: providedIntermediates,
 		}
 
-		if _, err := trustTestCert.Verify(opts); err != nil {
+		if mozBuiltChain, err := trustTestCert.Verify(opts); err != nil {
 			thisCertificate.MozTrust = "N"
 		} else {
 			thisCertificate.MozTrust = "Y"
+
+			//	Check each cert in each possible completed chain against SYMC blacklist(s)
+			for _, certChainMoz := range mozBuiltChain {
+				for _, certFromMozChain := range certChainMoz {
+					sha256Hash := sha256.New()
+					sha256Hash.Write(certFromMozChain.RawSubjectPublicKeyInfo)
+					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
+					if symantecBadKeys[thisCertKeyHash] {
+						symantecFailure++
+					}
+					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
+						symantecFailure--
+					}
+				}
+			}
+
 		}
 	}
 	if msStore != nil {
@@ -523,10 +516,26 @@ func CheckCertificate(address string) CertResult {
 			Intermediates: providedIntermediates,
 		}
 
-		if _, err := trustTestCert.Verify(opts); err != nil {
+		if msBuiltChain, err := trustTestCert.Verify(opts); err != nil {
 			thisCertificate.MSTrust = "N"
 		} else {
 			thisCertificate.MSTrust = "Y"
+
+			//	Check each cert in each possible completed chain against SYMC blacklist(s)
+			for _, certChainMS := range msBuiltChain {
+				for _, certFromMSChain := range certChainMS {
+					sha256Hash := sha256.New()
+					sha256Hash.Write(certFromMSChain.RawSubjectPublicKeyInfo)
+					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
+					if symantecBadKeys[thisCertKeyHash] {
+						symantecFailure++
+					}
+					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
+						symantecFailure--
+					}
+				}
+			}
+
 		}
 	}
 	if appleStore != nil {
@@ -536,11 +545,39 @@ func CheckCertificate(address string) CertResult {
 			Intermediates: providedIntermediates,
 		}
 
-		if _, err := trustTestCert.Verify(opts); err != nil {
+		if appleBuiltChain, err := trustTestCert.Verify(opts); err != nil {
 			thisCertificate.AppleTrust = "N"
 		} else {
 			thisCertificate.AppleTrust = "Y"
+
+			//	Check each cert in each possible completed chain against SYMC blacklist(s)
+			for _, certChainApple := range appleBuiltChain {
+				for _, certFromAppleChain := range certChainApple {
+					sha256Hash := sha256.New()
+					sha256Hash.Write(certFromAppleChain.RawSubjectPublicKeyInfo)
+					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
+					if symantecBadKeys[thisCertKeyHash] {
+						symantecFailure++
+					}
+					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
+						symantecFailure--
+					}
+				}
+			}
 		}
+	}
+
+	//fmt.Printf("SYMCFail value: %v\n", symantecFailure)
+
+	//	Symantec distrust checking
+	if symantecFailure >= 1 {
+		if thisCertificate.NotBefore < 1464739200 || thisCertificate.NotBefore >= 1512086400 {
+			thisCertificate.SymantecError = "Y"
+		} else {
+			thisCertificate.SymantecError = "N"
+		}
+	} else {
+		thisCertificate.SymantecError = "N"
 	}
 	
 	//	Add the chain of all certs provided by the server
