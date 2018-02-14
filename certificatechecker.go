@@ -8612,7 +8612,7 @@ func CheckCertificate(address string) CertResult {
 	thisCertificate.PEMChain = certChain
 
 	// Cert validation type - SS DV OV EV
-	if (thisCertificate.CertSubjectCN == thisCertificate.CertIssuerCN) {
+	if (thisCertificate.CertSubjectCN == thisCertificate.CertIssuerCN || strings.Contains(thisCertificate.CertIssuerCN, thisCertificate.CertSubjectCN) ) {
 		thisCertificate.ValidationType = "SS"
 	} else if (thisCertificate.CertOrg == "") {
 		thisCertificate.ValidationType = "DV"
