@@ -8330,7 +8330,7 @@ func CheckCertificate(address string) CertResult {
 	dnsLookupTime := time.Now()
 	
 	//	Make connection to the IP:port combination with set timeout - retry, too
-	ipConn, err := net.DialTimeout("tcp", finalConnection, 3 * time.Second)
+	ipConn, err := net.DialTimeout("tcp", finalConnection, 1.5 * time.Second)
 	if err != nil {
 		for connCount := 0; connCount < 2; connCount++ {
 			ipConn, err = net.DialTimeout("tcp", finalConnection, 3 * time.Second)
