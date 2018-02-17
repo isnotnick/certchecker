@@ -21,19 +21,27 @@ import (
 )
 
 //	Global regular expressions
-var reg *regexp.Regexp
-var serverReg *regexp.Regexp
+var {
+	reg *regexp.Regexp
+	serverReg *regexp.Regexp
+	timeoutSecs int = 1
+	timeoutDeadline int = 3
+	connRetry int = 2
+}
 
 //	Trust stores
-var mozStore *x509.CertPool
-var msStore *x509.CertPool
-var appleStore *x509.CertPool
+var {
+	mozStore *x509.CertPool
+	msStore *x509.CertPool
+	appleStore *x509.CertPool
+}
 //	Trust store files
-var mozFile string = "Mozilla-16-Jan-18.pem"
-var msFile string = "MS-16-Jan-18.pem"
-var appleFile string = "Apple-16-Jan-18.pem"
+var {
+	mozFile string = "Mozilla-16-Jan-18.pem"
+	msFile string = "MS-16-Jan-18.pem"
+	appleFile string = "Apple-16-Jan-18.pem"
+}
 
-//	Mapping of issuing CA/intermediate hash to 'owner' - based on CCADB data (from crt.sh)
 //	Mapping of issuing CA/intermediate hash to 'owner' - based on CCADB data (from crt.sh)
 var certificateOwner = map[string]string {
 	"ce9529627def602970b22d05e0ed3e74f12b71f26b795678b2a6a920450ee3ff": "RSA the Security Division of EMC",
@@ -8329,17 +8337,17 @@ func CheckCertificate(address string) CertResult {
 	dnsLookupTime := time.Now()
 	
 	//	Make connection to the IP:port combination with set timeout - retry, too
-	ipConn, err := net.DialTimeout("tcp", finalConnection, 1 * time.Second)
+	ipConn, err := net.DialTimeout("tcp", finalConnection, timeoutSecs * time.Second)
 	if err != nil {
-		for connCount := 0; connCount < 2; connCount++ {
-			ipConn, err = net.DialTimeout("tcp", finalConnection, 3 * time.Second)
+		for connCount := 0; connCount < connRetry; connCount++ {
+			ipConn, err = net.DialTimeout("tcp", finalConnection, timeoutSecs * time.Second)
 			if err != nil {
 				thisCertificate.ErrorMessage = "Failed TCP connection / Connection refused"
 				return thisCertificate
 			}
 		}
 	}
-	err = ipConn.SetDeadline(time.Now().Add(3 * time.Second))
+	err = ipConn.SetDeadline(time.Now().Add(timeoutDeadline * time.Second))
 	if err != nil {
 		fmt.Println("Failed to set deadline", err)
 		thisCertificate.ErrorMessage = "Failed TCP connection / Connection refused"
@@ -8369,7 +8377,7 @@ func CheckCertificate(address string) CertResult {
 		thisCertificate.ServerType = ""
 	} else {
 		buf := make([]byte, 4096)
-		conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		conn.SetReadDeadline(time.Now().Add(timeoutDeadline * time.Second))
 		_, err := conn.Read(buf)
 		if err != nil {
 			thisCertificate.ServerType = ""
