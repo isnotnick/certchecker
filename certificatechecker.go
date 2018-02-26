@@ -8634,13 +8634,11 @@ func CheckCertificate(address string) CertResult {
 		}
 	}
 
-	// Naming mis-match - WILDCARDS!
-	if (thisCertificate.HostName == thisCertificate.CertSubjectCN) {
-		thisCertificate.NameMismatch = "N"
-	} else if (strings.Contains(thisCertificate.CertSANS, thisCertificate.HostName) == true) {
-		thisCertificate.NameMismatch = "N"
-	} else {
+	// Naming mis-match - using Go function
+	if trustTestCert.VerifyHostname(thisCertificate.HostName) != nil {
 		thisCertificate.NameMismatch = "Y"
+	} else {
+		thisCertificate.NameMismatch = "N"
 	}
 
 	// Dates
