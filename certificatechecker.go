@@ -21,26 +21,26 @@ import (
 )
 
 //	Global regular expressions
-var {
+var (
 	reg *regexp.Regexp
 	serverReg *regexp.Regexp
-	timeoutSecs int = 1
-	timeoutDeadline int = 3
+	timeoutSecs time.Duration = 1 * time.Second
+	timeoutDeadline time.Duration = 3 * time.Second
 	connRetry int = 2
-}
+)
 
 //	Trust stores
-var {
+var (
 	mozStore *x509.CertPool
 	msStore *x509.CertPool
 	appleStore *x509.CertPool
-}
+)
 //	Trust store files
-var {
+var (
 	mozFile string = "Mozilla-16-Jan-18.pem"
 	msFile string = "MS-16-Jan-18.pem"
 	appleFile string = "Apple-16-Jan-18.pem"
-}
+)
 
 //	Mapping of issuing CA/intermediate hash to 'owner' - based on CCADB data (from crt.sh)
 var certificateOwner = map[string]string {
@@ -8138,7 +8138,6 @@ var symantecManagedExceptions = map[string]bool {
 }
 
 
-
 func init() {
 	//	Compile regular expressions for IP-address check and HTTP-Header server-token parsing
 	reg = regexp.MustCompile("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+")
@@ -8164,46 +8163,34 @@ type CertResult struct {
 	ScanTime int
 	ScanDuration int
 	Description string
-
 	ScanInput string
 	RawAddress string
 	PortNumber string
 	IPAddress string
 	HostName string
-
 	PEMCertificate string
 	PEMChain string
-
 	NotBefore int
 	NotAfter int
 	KeySize int
 	KeyType string
 	SigAlg string
 	OCSPStaple string
-
 	CertIssuerCN string
-
 	CertSubjectCN string
 	CertCountry string
-
 	CertSubject string
-
-	// *
+	CertFingerprintSHA256 string
 	IssuerOrg string
-	Thumbprint string
 	SerialNumber string
-
 	CertIssuer string
 	CertSANS string
 	CertOrg string
 	PolicyOIDS string
 	ServerType string
-
-	// *
 	ValidationType string
 	Validity string
 	NameMismatch string
-
 	InternalName string
 	RevocationStatus string
 
@@ -8500,6 +8487,12 @@ func CheckCertificate(address string) CertResult {
 			
 			thisCertificate.PEMCertificate = string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 			trustTestCert = cert
+
+			//	Cert fingerprint (SHA-256)
+			thisCertificate.CertFingerprintSHA256 = strings.Replace(fmt.Sprintf("% X", sha256.Sum256(cert.Raw)), " ", ":", -1)
+
+			//	Cert serial
+			thisCertificate.SerialNumber = cert.SerialNumber.String()
 		} else {
 			certChain += string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 			providedIntermediates.AppendCertsFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
@@ -8619,6 +8612,11 @@ func CheckCertificate(address string) CertResult {
 	thisCertificate.PEMChain = certChain
 
 	// Cert validation type - SS DV OV EV
+	//	Self-signed: if CN is issuer, OR, if CN is in issuer (may produce small number of false positives?)
+	//	No org in Subject - DV
+	//	EV OID in the cert - EV
+	//	Otherwise, OV.
+	//	Should we factor trust in here too? What about a valid 'trusted' OV cert that simply wasn't installed fully?
 	if (thisCertificate.CertSubjectCN == thisCertificate.CertIssuerCN || strings.Contains(thisCertificate.CertIssuerCN, thisCertificate.CertSubjectCN) ) {
 		thisCertificate.ValidationType = "SS"
 	} else if (thisCertificate.CertOrg == "") {
@@ -8649,7 +8647,6 @@ func CheckCertificate(address string) CertResult {
 	} else {
 		thisCertificate.Validity = "Valid"
 	}
-
 
 	scanTime := time.Now()
 	accurateScanDuration := int(scanTime.Sub(accurateStartTime) / time.Millisecond)
