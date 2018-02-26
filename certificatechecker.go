@@ -18,6 +18,7 @@ import (
 	"encoding/pem"
 	_"strconv"
 	"github.com/bogdanovich/dns_resolver"
+	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
 
 //	Global regular expressions
@@ -8165,6 +8166,7 @@ type CertResult struct {
 	Description string
 	ScanInput string
 	RawAddress string
+	PublicSuffix string
 	PortNumber string
 	IPAddress string
 	HostName string
@@ -8181,7 +8183,6 @@ type CertResult struct {
 	CertCountry string
 	CertSubject string
 	CertFingerprintSHA256 string
-	IssuerOrg string
 	SerialNumber string
 	CertIssuer string
 	CertSANS string
@@ -8290,6 +8291,9 @@ func CheckCertificate(address string) CertResult {
 		domainName = address
 		port = "443"
 	}
+	//	PSL
+	thisCertificate.PublicSuffix, _ = publicsuffix.Domain(domainName)
+
 	
 	//	Determine if the 'HostName' part is an IP address or not - if it's a domain, attempt a DNS lookup
 	//	If we do DNS here (via a couple of packages including the amazing miekg's DNS) - then we hopefully avoid the cgo/host lookup threading problems
