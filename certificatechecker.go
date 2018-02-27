@@ -43,6 +43,55 @@ var (
 	appleFile string = "Apple-16-Jan-18.pem"
 )
 
+// EV policy OIDs - extracted from Chrome EV issuer OIDs - current as of 27/2/18
+var evIssuers = map[string]string {
+	"1.3.159.1.17.1": "Actalis Authentication Root CA",
+	"1.3.6.1.4.1.17326.10.14.2.1.2": "AC Camerfirma S.A. Chambers of Commerce Root",
+	"1.3.6.1.4.1.17326.10.14.2.2.2": "AC Camerfirma S.A. Chambers of Commerce Root",
+	"1.3.6.1.4.1.17326.10.8.12.1.2": "AC Camerfirma S.A. Chambers of Commerce Root",
+	"1.3.6.1.4.1.17326.10.8.12.2.2": "AC Camerfirma S.A. Chambers of Commerce Root",
+	"1.2.40.0.17.1.22": "A-Trust",
+	"1.3.6.1.4.1.34697.2.1": "AffirmTrust Commercial",
+	"1.3.6.1.4.1.34697.2.2": "AffirmTrust Networking",
+	"1.3.6.1.4.1.34697.2.3": "AffirmTrust Premium",
+	"1.3.6.1.4.1.34697.2.4": "AffirmTrust Premium ECC",
+	"1.3.6.1.4.1.13177.10.1.3.10": "Autoridad de Certificacion Firmaprofesional CIF A62634068",
+	"2.23.140.1.1": "Amazon",
+	"2.16.578.1.26.1.3.3": "Buypass",
+	"1.3.6.1.4.1.22234.2.5.2.3.1": "CertPlus Class 2 Primary CA (KEYNECTIS)",
+	"1.2.616.1.113527.2.5.1.1": "Certum Trusted Network CA",
+	"2.16.156.112554.3": "CFCA EV Root",
+	"1.3.6.1.4.1.29836.1.10": "China Internet Network Information Center",
+	"1.3.6.1.4.1.6449.1.2.1.5.1": "COMODO Certification Authority",
+	"1.3.6.1.4.1.6334.1.100.1": "Cybertrust Global Root",
+	"2.16.840.1.114412.2.1": "DigiCert High Assurance EV Root CA",
+	"2.16.840.1.114412.1.3.0.2": "DigiCert High Assurance EV Root CA",
+	"1.3.6.1.4.1.4788.2.202.1": "D-TRUST Root Class 3 CA 2 EV 2009",
+	"2.16.840.1.114028.10.1.2": "Entrust.net",
+	"2.16.792.3.0.4.1.1.4": "E-Tugra",
+	"1.3.6.1.4.1.14370.1.6": "Equifax Secure Certificate Authority (GeoTrust)",
+	"1.3.6.1.4.1.4146.1.1": "GlobalSign Root CA",
+	"2.16.840.1.114413.1.7.23.3": "GoDaddy Class 2 Certification Authority",
+	"1.3.6.1.4.1.14777.6.1.1": "Izenpe.com",
+	"1.3.6.1.4.1.14777.6.1.2": "Izenpe.com",
+	"1.3.171.1.1.10.5.2": "LuxTrust",
+	"1.3.6.1.4.1.782.1.2.1.8.1": "Network Solutions Certificate Authority",
+	"2.16.756.5.14.7.4.8": "WISeKey",
+	"1.3.6.1.4.1.8024.0.2.100.1.2": "QuoVadis Root CA",
+	"2.16.840.1.114404.1.1.2.4.1": "SecureTrust Root - Trustwave",
+	"1.2.392.200091.100.721.1": "SECOMTRUST Root",
+	"2.16.528.1.1003.1.2.7": "Staat der Nederlanden",
+	"1.3.6.1.4.1.23223.1.1.1": "StartCom Certification Authority",
+	"2.16.840.1.114414.1.7.23.3": "Starfield Certificate Authority",
+	"2.16.756.1.83.21.0": "Swisscom",
+	"2.16.756.1.89.1.2.1.1": "SwissSign CA",
+	"2.16.840.1.113733.1.7.48.1": "Thawte CA",
+	"1.3.6.1.4.1.40869.1.1.22.3": "TWCA Root Certification Authority",
+	"1.3.6.1.4.1.7879.13.24.1": "T-Telesec GlobalRoot",
+	"2.16.840.1.113733.1.7.23.6": "VeriSign / Symantec",
+	"2.16.840.1.114171.500.9": "Wells Fargo WellsSecure Public Root CA",
+}
+
 //	Mapping of issuing CA/intermediate hash to 'owner' - based on CCADB data (from crt.sh)
 var certificateOwner = map[string]string {
 	"ce9529627def602970b22d05e0ed3e74f12b71f26b795678b2a6a920450ee3ff": "RSA the Security Division of EMC",
@@ -8192,7 +8241,6 @@ type CertResult struct {
 	ValidationType string
 	Validity string
 	NameMismatch string
-	InternalName string
 	RevocationStatus string
 
 	// *
@@ -8223,46 +8271,6 @@ func StoreSummaries() {
 
 
 func CheckCertificate(address string) CertResult {
-	// EV policy OIDs
-	evIssuers := make(map[string]string)
-	evIssuers["1.3.159.1.17.1"] = "Actalis"
-	evIssuers["1.3.6.1.4.1.17326.10.14.2.1.2"] = "AC Camerfirma S.A. Chambers of Commerce Root"
-	evIssuers["1.3.6.1.4.1.17326.10.14.2.2.2"] = "AC Camerfirma S.A. Chambers of Commerce Root"
-	evIssuers["1.3.6.1.4.1.17326.10.8.12.1.2"] = "AC Camerfirma S.A. Chambers of Commerce Root"
-	evIssuers["1.3.6.1.4.1.17326.10.8.12.2.2"] = "AC Camerfirma S.A. Chambers of Commerce Root"
-	evIssuers["1.2.40.0.17.1.22"] = "A-Trust"
-	evIssuers["1.3.6.1.4.1.34697.2.1"] = "AffirmTrust Commercial"
-	evIssuers["1.3.6.1.4.1.34697.2.2"] = "AffirmTrust Networking"
-	evIssuers["1.3.6.1.4.1.34697.2.3"] = "AffirmTrust Premium"
-	evIssuers["1.3.6.1.4.1.34697.2.4"] = "AffirmTrust Premium ECC"
-	evIssuers["2.16.578.1.26.1.3.3"] = "Buypass"
-	evIssuers["1.3.6.1.4.1.22234.2.5.2.3.1"] = "CertPlus Class 2 Primary CA (KEYNECTIS)"
-	evIssuers["1.2.616.1.113527.2.5.1.1"] = "Certum Trusted Network CA"
-	evIssuers["1.3.6.1.4.1.6449.1.2.1.5.1"] = "COMODO Certification Authority"
-	evIssuers["1.3.6.1.4.1.6334.1.100.1"] = "Cybertrust Global Root"
-	evIssuers["2.16.840.1.114412.2.1"] = "DigiCert High Assurance EV Root CA"
-	evIssuers["2.16.840.1.114412.1.3.0.2"] = "DigiCert High Assurance EV Root CA"
-	evIssuers["1.3.6.1.4.1.4788.2.202.1"] = "D-TRUST Root Class 3 CA 2 EV 2009"
-	evIssuers["2.16.840.1.114028.10.1.2"] = "Entrust.net Secure Server Certification Authority"
-	evIssuers["2.16.792.3.0.4.1.1.4"] = "E-Tugra"
-	evIssuers["1.3.6.1.4.1.14370.1.6"] = "Equifax Secure Certificate Authority (GeoTrust)"
-	evIssuers["1.3.6.1.4.1.4146.1.1"] = "GlobalSign Root CA"
-	evIssuers["2.16.840.1.114413.1.7.23.3"] = "GoDaddy Class 2 Certification Authority"
-	evIssuers["1.3.6.1.4.1.14777.6.1.1"] = "Izenpe.com"
-	evIssuers["1.3.6.1.4.1.14777.6.1.2"] = "Izenpe.com"
-	evIssuers["1.3.6.1.4.1.782.1.2.1.8.1"] = "Network Solutions Certificate Authority"
-	evIssuers["1.3.6.1.4.1.8024.0.2.100.1.2"] = "QuoVadis Root CA"
-	evIssuers["2.16.840.1.114404.1.1.2.4.1"] = "SecureTrust Root - Trustwave"
-	evIssuers["1.2.392.200091.100.721.1"] = "SECOMTRUST Root"
-	evIssuers["1.3.6.1.4.1.23223.1.1.1"] = "StartCom Certification Authority"
-	evIssuers["2.16.840.1.114414.1.7.23.3"] = "Starfield Certification Authority"
-	evIssuers["2.16.756.1.89.1.2.1.1"] = "SwissSign CA"
-	evIssuers["2.16.840.1.113733.1.7.48.1"] = "Thawte CA"
-	evIssuers["1.3.6.1.4.1.40869.1.1.22.3"] = "TWCA Root Certification Authority"
-	evIssuers["1.3.6.1.4.1.7879.13.24.1"] = "T-Telesec GlobalRoot"
-	evIssuers["2.16.840.1.113733.1.7.23.6"] = "VeriSign / Symantec"
-	evIssuers["2.16.840.1.114171.500.9"] = "Wells Fargo WellsSecure Public Root CA"
-
 	// CertPool for the server-provided chain
 	providedIntermediates := x509.NewCertPool()
 
@@ -8291,9 +8299,8 @@ func CheckCertificate(address string) CertResult {
 		domainName = address
 		port = "443"
 	}
-	//	PSL
+	//	PSL 
 	thisCertificate.PublicSuffix, _ = publicsuffix.Domain(domainName)
-
 	
 	//	Determine if the 'HostName' part is an IP address or not - if it's a domain, attempt a DNS lookup
 	//	If we do DNS here (via a couple of packages including the amazing miekg's DNS) - then we hopefully avoid the cgo/host lookup threading problems
