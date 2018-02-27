@@ -8212,7 +8212,6 @@ func init() {
 type CertResult struct {
 	ScanTime int
 	ScanDuration int
-	Description string
 	ScanInput string
 	RawAddress string
 	PublicSuffix string
@@ -8242,10 +8241,6 @@ type CertResult struct {
 	Validity string
 	NameMismatch string
 	RevocationStatus string
-
-	// *
-	KU string
-	EKU string
 	AIAUrl string
 	OCSPUrl string
 	CRLUrl string
@@ -8647,6 +8642,11 @@ func CheckCertificate(address string) CertResult {
 	} else {
 		thisCertificate.NameMismatch = "N"
 	}
+
+	//	CDPs, AIA
+	thisCertificate.CRLUrl = strings.Join(trustTestCert.CRLDistributionPoints, ",")
+	thisCertificate.AIAUrl = strings.Join(trustTestCert.IssuingCertificateURL, ",")
+	thisCertificate.OCSPUrl = strings.Join(trustTestCert.OCSPServer, ",")
 
 	// Dates
 	if (thisCertificate.NotAfter < int(time.Now().Unix())) {
