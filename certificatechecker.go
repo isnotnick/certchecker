@@ -8330,17 +8330,17 @@ func CheckCertificate(address string) CertResult {
 	dnsLookupTime := time.Now()
 	
 	//	Make connection to the IP:port combination with set timeout - retry, too
-	ipConn, err := net.DialTimeout("tcp", finalConnection, timeoutSecs * time.Second)
+	ipConn, err := net.DialTimeout("tcp", finalConnection, timeoutSecs)
 	if err != nil {
 		for connCount := 0; connCount < connRetry; connCount++ {
-			ipConn, err = net.DialTimeout("tcp", finalConnection, timeoutSecs * time.Second)
+			ipConn, err = net.DialTimeout("tcp", finalConnection, timeoutSecs)
 			if err != nil {
 				thisCertificate.ErrorMessage = "Failed TCP connection / Connection refused"
 				return thisCertificate
 			}
 		}
 	}
-	err = ipConn.SetDeadline(time.Now().Add(timeoutDeadline * time.Second))
+	err = ipConn.SetDeadline(time.Now().Add(timeoutDeadline))
 	if err != nil {
 		fmt.Println("Failed to set deadline", err)
 		thisCertificate.ErrorMessage = "Failed TCP connection / Connection refused"
