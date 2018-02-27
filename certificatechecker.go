@@ -8340,6 +8340,7 @@ func CheckCertificate(address string) CertResult {
 			}
 		}
 	}
+
 	err = ipConn.SetDeadline(time.Now().Add(timeoutDeadline))
 	if err != nil {
 		fmt.Println("Failed to set deadline", err)
@@ -8370,7 +8371,7 @@ func CheckCertificate(address string) CertResult {
 		thisCertificate.ServerType = ""
 	} else {
 		buf := make([]byte, 4096)
-		conn.SetReadDeadline(time.Now().Add(timeoutDeadline * time.Second))
+		conn.SetReadDeadline(time.Now().Add(timeoutDeadline))
 		_, err := conn.Read(buf)
 		if err != nil {
 			thisCertificate.ServerType = ""
