@@ -8533,11 +8533,8 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromMozChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] {
+					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
-					}
-					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
-						symantecFailure--
 					}
 				}
 			}
@@ -8562,11 +8559,8 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromMSChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] {
+					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
-					}
-					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
-						symantecFailure--
 					}
 				}
 			}
@@ -8591,18 +8585,13 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromAppleChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] {
+					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
-					}
-					if symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash] {
-						symantecFailure--
 					}
 				}
 			}
 		}
 	}
-
-	//fmt.Printf("SYMCFail value: %v\n", symantecFailure)
 
 	//	Symantec distrust checking
 	if symantecFailure >= 1 {
@@ -8636,6 +8625,8 @@ func CheckCertificate(address string) CertResult {
 			thisCertificate.ValidationType = "OV"
 		}
 	}
+
+	//	Certificate 'type' determination - single, wildcard, multi-domain
 
 	// Naming mis-match - using Go function
 	if trustTestCert.VerifyHostname(thisCertificate.HostName) != nil {
