@@ -8533,7 +8533,7 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromMozChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
+					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
 					}
 				}
@@ -8559,7 +8559,7 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromMSChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
+					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
 					}
 				}
@@ -8585,7 +8585,7 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash := sha256.New()
 					sha256Hash.Write(certFromAppleChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
-					if symantecBadKeys[thisCertKeyHash] && (symantecExceptions[thisCertKeyHash] || symantecManagedExceptions[thisCertKeyHash]) {
+					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
 						symantecFailure++
 					}
 				}
