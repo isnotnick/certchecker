@@ -8353,7 +8353,13 @@ func CheckCertificate(address string) CertResult {
 	ipConnTime := time.Now()
 
 	// Disable normal certificate validation checking, attempt TLS connection to host - also use 'servername' to support SNI
-	tlsConfig := tls.Config{ServerName: domainName, InsecureSkipVerify: true}
+	//	Ordering of ciphersuites set here (rather than Go defaults) in an effort to seem more 'browserlike'
+	tlsConfig := tls.Config{ServerName: domainName, InsecureSkipVerify: true, CipherSuites: []uint16 {
+		tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	},}
+	//tlsConfig := tls.Config{ServerName: domainName, InsecureSkipVerify: true}
 	conn := tls.Client(ipConn, &tlsConfig)
 	hsErr := conn.Handshake()
 	if hsErr != nil {
@@ -8534,6 +8540,7 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash.Write(certFromMozChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
 					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
+						//fmt.Println("Hash moz: ", thisCertKeyHash)
 						symantecFailure++
 					}
 				}
@@ -8560,6 +8567,7 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash.Write(certFromMSChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
 					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
+						//fmt.Println("Hash ms: ", thisCertKeyHash)
 						symantecFailure++
 					}
 				}
@@ -8586,12 +8594,15 @@ func CheckCertificate(address string) CertResult {
 					sha256Hash.Write(certFromAppleChain.RawSubjectPublicKeyInfo)
 					thisCertKeyHash := hex.EncodeToString(sha256Hash.Sum(nil))
 					if symantecBadKeys[thisCertKeyHash] && (!symantecExceptions[thisCertKeyHash] || !symantecManagedExceptions[thisCertKeyHash]) {
+						//fmt.Println("Hash apple: ", thisCertKeyHash)
 						symantecFailure++
 					}
 				}
 			}
 		}
 	}
+
+	fmt.Println("Symantec value? ", symantecFailure)
 
 	//	Symantec distrust checking
 	if symantecFailure >= 1 {
