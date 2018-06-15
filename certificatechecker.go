@@ -8602,8 +8602,6 @@ func CheckCertificate(address string) CertResult {
 		}
 	}
 
-	fmt.Println("Symantec value? ", symantecFailure)
-
 	//	Symantec distrust checking
 	if symantecFailure >= 1 {
 		if thisCertificate.NotBefore < 1464739200 || thisCertificate.NotBefore <= 1512086400 {
