@@ -38,9 +38,9 @@ var (
 )
 //	Trust store files
 var (
-	mozFile string = "Mozilla-16-Jan-18.pem"
-	msFile string = "MS-16-Jan-18.pem"
-	appleFile string = "Apple-16-Jan-18.pem"
+	mozFile string = "Mozilla-29-Mar-19.pem"
+	msFile string = "MS-29-Mar-19.pem"
+	appleFile string = "Apple-29-Mar-19.pem"
 )
 
 // EV policy OIDs - extracted from Chrome EV issuer OIDs - current as of 27/2/18
