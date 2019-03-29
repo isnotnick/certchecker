@@ -8710,6 +8710,7 @@ type CertResult struct {
 	SerialNumber string
 	CertIssuer string
 	CertSANS string
+	CertSANSCount int
 	CertOrg string
 	PolicyOIDS string
 	ServerType string
@@ -8730,6 +8731,8 @@ type CertResult struct {
 	SymantecError string
 
 	CertificateOwner string
+
+	ProductType string
 
 	ErrorMessage string
 }
@@ -8899,6 +8902,7 @@ func CheckCertificate(address string) CertResult {
 			thisCertificate.CertIssuerCN = cert.Issuer.CommonName
 			thisCertificate.CertCountry = strings.Join(cert.Subject.Country, "")
 			thisCertificate.CertSANS = strings.Join(cert.DNSNames, ",")
+			thisCertificate.CertSANSCount = len(cert.DNSNames)
 			thisCertificate.NotBefore = int(cert.NotBefore.Unix())
 			thisCertificate.NotAfter = int(cert.NotAfter.Unix())
 			thisCertificate.CertOrg = strings.Join(cert.Subject.Organization, "")
@@ -9110,6 +9114,19 @@ func CheckCertificate(address string) CertResult {
 	}
 
 	//	Certificate 'type' determination - single, wildcard, multi-domain
+	if (thisCertificate.CertSANSCount > 2) {
+		if (strings.Contains(thisCertificate.CertSANS, "*")) {
+			thisCertificate.ProductType = "MDC with wildcard"
+		} else {
+			thisCertificate.ProductType = "MDC"
+		}
+	} else {
+		if (strings.Contains(thisCertificate.CertSANS, "*")) {
+			thisCertificate.ProductType = "Wildcard"
+		} else {
+			thisCertificate.ProductType = "Single certificate"
+		}
+	}
 
 	// Naming mis-match - using Go function
 	if trustTestCert.VerifyHostname(thisCertificate.HostName) != nil {
