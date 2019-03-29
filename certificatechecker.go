@@ -8521,9 +8521,9 @@ func CheckCertificate(address string) CertResult {
 	}
 
 	//	Trust store checking
+	//	Omit the 'dnsName' value in VerifyOptions - we do our own name-mismatch checking and want to keep separate - this is 'just' for path validation
 	if mozStore != nil {
 		opts := x509.VerifyOptions{
-			DNSName: thisCertificate.HostName,
 			Roots: mozStore,
 			Intermediates: providedIntermediates,
 		}
@@ -8550,7 +8550,6 @@ func CheckCertificate(address string) CertResult {
 	}
 	if msStore != nil {
 		opts := x509.VerifyOptions{
-			DNSName: thisCertificate.HostName,
 			Roots: msStore,
 			Intermediates: providedIntermediates,
 		}
@@ -8577,7 +8576,6 @@ func CheckCertificate(address string) CertResult {
 	}
 	if appleStore != nil {
 		opts := x509.VerifyOptions{
-			DNSName: thisCertificate.HostName,
 			Roots: appleStore,
 			Intermediates: providedIntermediates,
 		}
