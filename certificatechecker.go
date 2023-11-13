@@ -29,10 +29,10 @@ import (
 	"github.com/domainr/dnsr"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
 
-	"certchecker/utils"
+	certchecker "certchecker/utils"
 )
 
-//	Global regular expressions
+// Global regular expressions
 var (
 	reg             *regexp.Regexp
 	timeoutSecs     time.Duration = 3 * time.Second
@@ -40,18 +40,18 @@ var (
 	connRetry       int           = 2
 )
 
-//	Trust stores
+// Trust stores
 var (
 	mozStore   *x509.CertPool
 	msStore    *x509.CertPool
 	appleStore *x509.CertPool
 )
 
-//	Trust store files
+// Trust store files
 var (
-	mozFile   string = "truststores/Mozilla-PEM-29092021.pem"
-	msFile    string = "truststores/MS-PEM-29092021.pem"
-	appleFile string = "truststores/Apple-PEM-29092021.pem"
+	mozFile   string = "truststores/Mozilla-PEM-13112023.pem"
+	msFile    string = "truststores/MS-PEM-13112023.pem"
+	appleFile string = "truststores/Apple-PEM-13112023.pem"
 )
 
 func init() {
@@ -107,87 +107,87 @@ sels-signed root in chain
 */
 
 type TLSCheck struct {
-	ScanInformation		ScanInfo		`json:"scaninformation"`
-	CertInformation		CertInfo		`json:"certinformation"`
-	ConnInformation		ConnectionInfo	`json:"conninformation"`
-	ErrorMessage		string			`json:"errormessage"`
+	ScanInformation ScanInfo       `json:"scaninformation"`
+	CertInformation CertInfo       `json:"certinformation"`
+	ConnInformation ConnectionInfo `json:"conninformation"`
+	ErrorMessage    string         `json:"errormessage"`
 }
 
 type ScanInfo struct {
-	ScanTime			int				`json:"scantime"`
-	ScanDuration		int				`json:"scanduration"`
-	ScanInput			string			`json:"scaninput"`
-	RawInput			string			`json:"rawinput"`
-	PublicSuffix		string			`json:"publicsuffix"`
-	PortNumber			int				`json:"portnumber"`
-	IPAddress			string			`json:"ipaddress"`
-	HostName			string			`json:"hostname"`
+	ScanTime     int    `json:"scantime"`
+	ScanDuration int    `json:"scanduration"`
+	ScanInput    string `json:"scaninput"`
+	RawInput     string `json:"rawinput"`
+	PublicSuffix string `json:"publicsuffix"`
+	PortNumber   int    `json:"portnumber"`
+	IPAddress    string `json:"ipaddress"`
+	HostName     string `json:"hostname"`
 }
 
 type CertInfo struct {
-	SubjectInformation	SubjectInfo		`json:"subjectinformation"`
-	IssuerInformation	IssuerInfo		`json:"issuerinformation"`
-	TrustInformation	TrustInfo		`json:"trustinformation"`
-	PEMCertificate		string			`json:"pemcertificate"`
-	PEMChain			string			`json:"pemchain,omitempty"`
-	NotBefore			int				`json:"notbefore"`
-	NotAfter			int				`json:"notafter"`
-	KeySize				int				`json:"keysize"`
-	KeyType				string			`json:"keytype"`
-	SigAlg				string			`json:"sigalg"`
-	PolicyOIDS			string			`json:"policyoids"`
-	AIAUrl 				string			`json:"aiaurl"`
-	OCSPUrl				string			`json:"ocspurl"`
-	CRLUrl				string			`json:"crlurl"`
-	FingerprintSHA256 	string			`json:"fingerprintsha256"`
-	SerialNumber		string			`json:"serialnumber"`
-	ValidationType		string			`json:"valdationtype"`
-	ProductType			string			`json:"producttype"`
-	Validity			string			`json:"validity"`
-	NameMismatch		string			`json:"namemistmatch"`
-	RevocationStatus	string			`json:"revocationstatus"`
+	SubjectInformation SubjectInfo `json:"subjectinformation"`
+	IssuerInformation  IssuerInfo  `json:"issuerinformation"`
+	TrustInformation   TrustInfo   `json:"trustinformation"`
+	PEMCertificate     string      `json:"pemcertificate"`
+	PEMChain           string      `json:"pemchain,omitempty"`
+	NotBefore          int         `json:"notbefore"`
+	NotAfter           int         `json:"notafter"`
+	KeySize            int         `json:"keysize"`
+	KeyType            string      `json:"keytype"`
+	SigAlg             string      `json:"sigalg"`
+	PolicyOIDS         string      `json:"policyoids"`
+	AIAUrl             string      `json:"aiaurl"`
+	OCSPUrl            string      `json:"ocspurl"`
+	CRLUrl             string      `json:"crlurl"`
+	FingerprintSHA256  string      `json:"fingerprintsha256"`
+	SerialNumber       string      `json:"serialnumber"`
+	ValidationType     string      `json:"valdationtype"`
+	ProductType        string      `json:"producttype"`
+	Validity           string      `json:"validity"`
+	NameMismatch       string      `json:"namemistmatch"`
+	RevocationStatus   string      `json:"revocationstatus"`
 }
 
 type IssuerInfo struct {
-	FullIssuer			string			`json:"fullissuer"`
-	IssuerCN			string			`json:"issuercn"`
-	IssuerBrand			string			`json:"issuerbrand,omitempty"`
+	FullIssuer  string `json:"fullissuer"`
+	IssuerCN    string `json:"issuercn"`
+	IssuerBrand string `json:"issuerbrand,omitempty"`
 }
 
 type TrustInfo struct {
-	AppleTrust			string			`json:"appletrust"`
-	MozTrust			string			`json:"moztrust"`
-	MSTrust				string			`json:"mstrust"`
+	AppleTrust string `json:"appletrust"`
+	MozTrust   string `json:"moztrust"`
+	MSTrust    string `json:"mstrust"`
 }
 
 type SubjectInfo struct {
-	CN   				string			`json:"cn,omitempty"`
-	O    				string			`json:"o,omitempty"`
-	OU   				string			`json:"ou,omitempty"`
-	L    				string			`json:"l,omitempty"`
-	ST   				string			`json:"st,omitempty"`
-	C    				string			`json:"c,omitempty"`
-	SANS 				string			`json:"sans,omitempty"`
-	CertSANSCount		int				`json:"certsanscount"`
-	FullSubject			string			`json:"fullsubject"`
+	CN            string `json:"cn,omitempty"`
+	O             string `json:"o,omitempty"`
+	OU            string `json:"ou,omitempty"`
+	L             string `json:"l,omitempty"`
+	ST            string `json:"st,omitempty"`
+	C             string `json:"c,omitempty"`
+	SANS          string `json:"sans,omitempty"`
+	CertSANSCount int    `json:"certsanscount"`
+	FullSubject   string `json:"fullsubject"`
 }
 
 type ConnectionInfo struct {
-	ServerType			string			`json:"servertype,omitempty"`
-	OCSPStaple			string			`json:"ocspstaple,omitempty"`
-	HTTPHeaders			[]HTTPHeader	`json:"httpheaders,omitempty"`
-	NSRecords    		string			`json:"nsrecords,omitempty"`
-	MXRecords    		string			`json:"mxrecords,omitempty"`
-	CAARecords   		string			`json:"caarecords,omitempty"`
-	RevDNSRecord 		string			`json:"revdnsrecord,omitempty"`
+	ServerType   string       `json:"servertype,omitempty"`
+	OCSPStaple   string       `json:"ocspstaple,omitempty"`
+	HTTPHeaders  []HTTPHeader `json:"httpheaders,omitempty"`
+	NSRecords    string       `json:"nsrecords,omitempty"`
+	MXRecords    string       `json:"mxrecords,omitempty"`
+	CAARecords   string       `json:"caarecords,omitempty"`
+	RevDNSRecord string       `json:"revdnsrecord,omitempty"`
 }
 
 type HTTPHeader struct {
-	Header				string			`json:"header,omitempty"`
-	HeaderValue			string			`json:"headervalue,omitempty"`
+	Header      string `json:"header,omitempty"`
+	HeaderValue string `json:"headervalue,omitempty"`
 }
 
-//	Certificate structure
+// Certificate structure
 type CertResult struct {
 	ScanTime     int
 	ScanDuration int
